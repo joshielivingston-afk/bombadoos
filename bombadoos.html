@@ -205,6 +205,30 @@ document.addEventListener('click', e => {
 let db = null, items = [], timer = null, loaded = false, dbMissing = false, lastLifted = null;
 
 const $ = (s, r = document) => r.querySelector(s);
+/* Capital first letter, plus proper nouns wherever they appear. */
+const PROPER = { spanish: 'Spanish', english: 'English', french: 'French', italian: 'Italian', portuguese: 'Portuguese',
+  japanese: 'Japanese', german: 'German', antarctica: 'Antarctica', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok' };
+function pretty(name) {
+  const t = String(name).replace(/[A-Za-z]+/g, w => PROPER[w.toLowerCase()] || w);
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+/* One-time additions to saved lists. Each leaves a hidden marker row so it never runs twice
+   (and never brings back something you removed). */
+const MIGRATIONS = [
+  { id: 'm-learning-spanish', add: { id: 'deep-learning-spanish', list: 'creative', name: 'Learning Spanish' } },
+];
+let migrated = false;
+async function runMigrations() {
+  if (migrated || !db) return; migrated = true;
+  for (const m of MIGRATIONS) {
+    if (items.some(i => i.id === m.id)) continue;
+    try {
+      const { id, ...row } = m.add;
+      await db.collection('items').doc(id).set({ ...row, last: null, count: 0, created: Date.now() });
+      await db.collection('items').doc(m.id).set({ list: '_meta', name: m.id, last: null, count: 0, created: 0 });
+    } catch (e) { console.warn(e); }
+  }
+}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function since(t) {
@@ -230,7 +254,7 @@ function list(key) {
     .sort((a, b) => (b.last || 0) - (a.last || 0) || (a.created || 0) - (b.created || 0));
   return `<div class="btns">${rows.map(i => `
     <button class="item ${i.id === lastLifted ? 'lifted' : ''}" data-id="${i.id}" style="${glowStyle(i.count)}">
-      <span class="name">${esc(i.name)}</span><span class="since">${since(i.last)}</span>
+      <span class="name">${esc(pretty(i.name))}</span><span class="since">${since(i.last)}</span>
     </button>`).join('')}</div>
     ${loaded && !dbMissing ? `<form class="add" data-list="${key}"><input id="add-${key}" autocomplete="off" placeholder="+" aria-label="Add"></form>` : ''}`;
 }
@@ -268,7 +292,7 @@ function renderTimer() {
     const C = 2 * Math.PI * 48;
     o.innerHTML = `<div class="over timer">
       <button class="leave" aria-label="Back">←</button>
-      <p class="small">${esc(timer.name)}</p>
+      <p class="small">${esc(pretty(timer.name))}</p>
       <div class="timerwrap"><svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
         <circle class="track" cx="50" cy="50" r="48"/><circle class="prog" cx="50" cy="50" r="48"
         stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><p class="clock"></p></div>
@@ -306,19 +330,19 @@ async function touch(id, picked = false) {
   it.last = now; it.count = (it.count || 0) + 1;
   try { await db.collection('items').doc(id).update({ last: now, count: it.count }); } catch (e) { console.warn(e); }
   if (it.list === 'spont') {
-    showOverlay(picked ? `<p class="big">${esc(it.name)}</p><p class="small">enjoy</p>` : `<p class="big">enjoy</p>`,
+    showOverlay(picked ? `<p class="big">${esc(pretty(it.name))}</p><p class="small">enjoy</p>` : `<p class="big">enjoy</p>`,
       () => { closeOverlay(); render(); });
   } else if (it.list === 'creative') {
     timer = { id, name: it.name, start: now }; leftTimer = false; chimed = false;
     renderTimer();
     try { await db.doc('state/timer').set(timer); } catch (e) { console.warn(e); }
   } else {
-    showOverlay(`<p class="big">${esc(it.name)}</p><p class="small">soon</p>`, () => { closeOverlay(); render(); });
+    showOverlay(`<p class="big">${esc(pretty(it.name))}</p><p class="small">soon</p>`, () => { closeOverlay(); render(); });
   }
   render();
 }
 async function addItem(list, name) {
-  name = name.trim(); if (!name || !db) return;
+  name = pretty(name.trim()); if (!name || !db) return;
   const ref = db.collection('items').doc();
   lastLifted = ref.id;
   try { await ref.set({ list, name, last: null, count: 0, created: Date.now() }); }
@@ -687,6 +711,7 @@ render();
   if (!db) db = localDb();
   db.collection('items').onSnapshot(snap => {
     items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!snap.metadata.fromCache) runMigrations();
     if (!snap.metadata.fromCache) { loaded = true; dbMissing = false; clearTimeout(loadTimer); }
     else loaded = true;
     if (!$('#overlay .over:not(.timer)')) render();
