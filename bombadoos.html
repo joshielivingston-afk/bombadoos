@@ -11,6 +11,7 @@
   --muted: #6f93b5;
   --line: #bcdaf5;
   --btn: rgba(255,255,255,.75);
+  --item: rgba(255,255,255,.82);
   --glow: 120, 190, 255;   /* rgb of the returning-light */
   --display: "Italiana", "Didot", "Bodoni 72", Georgia, serif;
   --body: "Jost", "Futura", "Avenir Next", system-ui, sans-serif;
@@ -52,10 +53,10 @@ body {
 
 /* ---- living sky: phase (time of day), weather, season ---- */
 :root { --sky-mid: var(--sky-low); --cloud: .9; }
-body[data-phase="dawn"]    { --sky-top: #e9dcf3; --sky-mid: #f6e1ec; --sky-low: #ffeadf; --fg: #4b4466; --muted: #8a7fa6; --line: #e6d8ec; --btn: rgba(255,255,255,.6);  --glow: 255, 200, 215; --cloud: .55; color-scheme: light; }
-body[data-phase="day"]     { --sky-top: #3aa6ff; --sky-mid: #8dd0ff; --sky-low: #d6efff; --fg: #0c2d4f; --muted: #2d6596; --line: rgba(255,255,255,.85); --btn: rgba(255,255,255,.85); --glow: 255, 236, 170; --cloud: 1; color-scheme: light; }
-body[data-phase="evening"] { --sky-top: #27336e; --sky-mid: #a5577e; --sky-low: #ffb067; --fg: #fff5ec; --muted: #ffdcc4; --line: rgba(255,255,255,.3);  --btn: rgba(255,255,255,.14); --glow: 255, 190, 120; --cloud: .35; color-scheme: dark; }
-body[data-phase="night"]   { --sky-top: #030817; --sky-mid: #0a1631; --sky-low: #172b52; --fg: #e6eeff; --muted: #93a8d4; --line: rgba(255,255,255,.14); --btn: rgba(255,255,255,.06); --glow: 150, 190, 255; --cloud: .07; color-scheme: dark; }
+body[data-phase="dawn"]    { --sky-top: #e9dcf3; --sky-mid: #f6e1ec; --sky-low: #ffeadf; --fg: #4b4466; --muted: #8a7fa6; --line: #e6d8ec; --btn: rgba(255,255,255,.38); --item: rgba(255,255,255,.76); --glow: 255, 200, 215; --cloud: .55; color-scheme: light; }
+body[data-phase="day"]     { --sky-top: #3aa6ff; --sky-mid: #8dd0ff; --sky-low: #d6efff; --fg: #0c2d4f; --muted: #2d6596; --line: rgba(255,255,255,.85); --btn: rgba(255,255,255,.42); --item: rgba(255,255,255,.84); --glow: 255, 236, 170; --cloud: 1; color-scheme: light; }
+body[data-phase="evening"] { --sky-top: #27336e; --sky-mid: #a5577e; --sky-low: #ffb067; --fg: #fff5ec; --muted: #ffdcc4; --line: rgba(255,255,255,.3);  --btn: rgba(255,255,255,.14); --item: rgba(66,54,108,.74); --glow: 255, 190, 120; --cloud: .35; color-scheme: dark; }
+body[data-phase="night"]   { --sky-top: #030817; --sky-mid: #0a1631; --sky-low: #172b52; --fg: #e6eeff; --muted: #93a8d4; --line: rgba(255,255,255,.14); --btn: rgba(255,255,255,.06); --item: rgba(18,34,68,.8); --glow: 150, 190, 255; --cloud: .07; color-scheme: dark; }
 body[data-phase] .clouds { opacity: var(--cloud); }
 body[data-weather="cloudy"] { --cloud: 1; }
 .skybg, .weathertint, #skycanvas, .sun { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
@@ -79,7 +80,7 @@ body[data-phase="night"] .sun { opacity: .9; width: 10vmin; height: 10vmin; marg
 body[data-weather="rain"] .sun, body[data-weather="cloudy"] .sun { opacity: .25; }
 main, .centerbar, .sound { z-index: 2; }
 body:has(#overlay .over, #centerspace .over, #signin .over) main { visibility: hidden; }
-body:has(#signin .over) .centerbar { display: none; }
+body:has(#signin .over) .centerbar, body:has(#overlay .timer) .centerbar { display: none; }
 .signin { z-index: 9; }
 .signin form { display: flex; gap: .5rem; justify-content: center; }
 .signin input { font: inherit; color: var(--fg); background: var(--btn); border: 1px solid var(--line); border-radius: 18px; padding: .7rem 1rem; width: min(70vw, 18rem); }
@@ -99,7 +100,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 @keyframes breathe { 50% { text-shadow: 0 0 70px rgba(var(--glow), .95); } }
 
 .doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.5rem, 2vw, 1.2rem); max-width: 720px; margin: 0 auto 3rem; }
-.door { font-family: var(--display); font-size: clamp(.95rem, 3.9vw, 1.9rem); letter-spacing: .02em; padding: 1.1rem .3rem; white-space: nowrap;
+.door { font-family: var(--display); font-size: clamp(.95rem, 3.9vw, 1.9rem); letter-spacing: .02em; padding: 1.1rem .3rem; white-space: nowrap; text-align: center;
   border-radius: 22px; background: var(--btn); border: 1px solid var(--line); min-width: 0; overflow-wrap: anywhere;
   transition: box-shadow .5s, background .5s, transform .25s; }
 .door:hover { transform: translateY(-2px); }
@@ -116,8 +117,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .col h2 { font-family: var(--display); font-weight: 400; font-size: 1.9rem; margin: 0; text-align: center; letter-spacing: .04em; }
 .sub { font-size: .75rem; letter-spacing: .3em; color: var(--muted); text-align: center; margin: .6rem 0 0; }
 .btns { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; }
-.item { display: inline-flex; flex-direction: column; align-items: center; gap: .1rem;
-  padding: .65rem 1.1rem; border-radius: 18px; background: var(--btn); border: 1px solid var(--line);
+.item { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem; text-align: center;
+  padding: .65rem 1.1rem; border-radius: 18px; background: var(--item); border: 1px solid var(--line);
   user-select: none; -webkit-user-select: none; max-width: 100%;
   transition: transform .25s, box-shadow .6s, background .6s; }
 .item:hover { transform: translateY(-2px); }
@@ -207,7 +208,7 @@ let db = null, items = [], timer = null, loaded = false, dbMissing = false, last
 const $ = (s, r = document) => r.querySelector(s);
 /* Capital first letter, plus proper nouns wherever they appear. */
 const PROPER = { spanish: 'Spanish', english: 'English', french: 'French', italian: 'Italian', portuguese: 'Portuguese',
-  japanese: 'Japanese', german: 'German', antarctica: 'Antarctica', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok' };
+  japanese: 'Japanese', german: 'German', antarctica: 'Antarctica', instagram: 'Instagram', tiktok: 'TikTok' };
 function pretty(name) {
   const t = String(name).replace(/[A-Za-z]+/g, w => PROPER[w.toLowerCase()] || w);
   return t.charAt(0).toUpperCase() + t.slice(1);
@@ -215,7 +216,9 @@ function pretty(name) {
 /* One-time additions to saved lists. Each leaves a hidden marker row so it never runs twice
    (and never brings back something you removed). */
 const MIGRATIONS = [
-  { id: 'm-learning-spanish', add: { id: 'deep-learning-spanish', list: 'creative', name: 'Learning Spanish' } },
+  { id: 'm-learning-spanish', add: { id: 'deep-learning-spanish', list: 'creative', name: 'Learn Spanish' } },
+  { id: 'm-rename-edit-website', rename: { list: 'creative', from: 'editing this website', to: 'Edit this website' } },
+  { id: 'm-rename-learn-spanish', rename: { list: 'creative', from: 'learning spanish', to: 'Learn Spanish' } },
 ];
 let migrated = false;
 async function runMigrations() {
@@ -223,8 +226,17 @@ async function runMigrations() {
   for (const m of MIGRATIONS) {
     if (items.some(i => i.id === m.id)) continue;
     try {
-      const { id, ...row } = m.add;
-      await db.collection('items').doc(id).set({ ...row, last: null, count: 0, created: Date.now() });
+      if (m.add) {
+        const { id, ...row } = m.add;
+        await db.collection('items').doc(id).set({ ...row, last: null, count: 0, created: Date.now() });
+      }
+      if (m.rename) {
+        const r = m.rename;
+        for (const it of items.filter(i => i.list === r.list && i.name.trim().toLowerCase() === r.from)) {
+          it.name = r.to;
+          await db.collection('items').doc(it.id).update({ name: r.to });
+        }
+      }
       await db.collection('items').doc(m.id).set({ list: '_meta', name: m.id, last: null, count: 0, created: 0 });
     } catch (e) { console.warn(e); }
   }
@@ -288,6 +300,7 @@ let tickId = null;
 function renderTimer() {
   const o = $('#overlay');
   if (!timer) { if (o.querySelector('.timer')) closeOverlay(); return; }
+  if (leftTimer) return;  // you stepped away; it keeps running until you return to its task (or sit idle)
   if (!o.querySelector('.timer')) {
     const C = 2 * Math.PI * 48;
     o.innerHTML = `<div class="over timer">
@@ -296,7 +309,7 @@ function renderTimer() {
       <div class="timerwrap"><svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
         <circle class="track" cx="50" cy="50" r="48"/><circle class="prog" cx="50" cy="50" r="48"
         stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><p class="clock"></p></div>
-      <button class="done" hidden>done</button></div>`;
+      <button class="done">end</button></div>`;
     o.querySelector('.leave').onclick = () => { leftTimer = true; closeOverlay(); };
     o.querySelector('.done').onclick = finishTimer;
   }
@@ -304,16 +317,25 @@ function renderTimer() {
 }
 let leftTimer = false, chimed = false;
 function tick() {
-  const o = $('#overlay .timer'); if (!o || !timer) return;
+  if (!timer) return;
   const el = Date.now() - timer.start, left = HOUR - el;
+  if (left <= 0 && !chimed) { chimed = true; if (el < HOUR + 120000) Music.chime(); }
+  const o = $('#overlay .timer'); if (!o) return;
   const t = Math.abs(left), mm = Math.floor(t / 60000), ss = Math.floor(t / 1000) % 60;
   o.querySelector('.clock').textContent = (left < 0 ? '+' : '') + mm + ':' + String(ss).padStart(2, '0');
   const C = 2 * Math.PI * 48;
   o.querySelector('.prog').setAttribute('stroke-dashoffset', C * Math.max(0, left) / HOUR);
-  o.querySelector('.done').hidden = left > 0;
-  if (left <= 0 && !chimed) { chimed = true; if (el < HOUR + 5000) Music.chime(); }
+  o.querySelector('.done').textContent = left > 0 ? 'end' : 'done';
 }
 setInterval(() => { tick(); }, 1000);
+/* After a while of no touching anything, drift back to a running timer. */
+let lastAct = Date.now();
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { lastAct = Date.now(); }, true));
+setInterval(() => {
+  if (timer && leftTimer && Date.now() - lastAct > 90e3 && !$('#overlay .over') && !$('#centerspace .over') && !$('#signin .over')) {
+    leftTimer = false; renderTimer();
+  }
+}, 5000);
 setInterval(() => { if (!$('#overlay .over') && !document.activeElement?.id?.startsWith('add-')) render(); }, 30000);
 
 async function finishTimer() {
@@ -325,6 +347,7 @@ async function finishTimer() {
 /* ---------- actions ---------- */
 async function touch(id, picked = false) {
   const it = items.find(i => i.id === id); if (!it) return;
+  if (it.list === 'creative' && timer && timer.id === id) { leftTimer = false; renderTimer(); return; }  // back to its running timer
   const now = Date.now();
   lastLifted = id;
   it.last = now; it.count = (it.count || 0) + 1;
@@ -426,7 +449,9 @@ const Music = (() => {
     }
     setTimeout(loop, 500);
   }
+  let chimeCtx = null;
   function start() {
+    if (!chimeCtx) { try { chimeCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
     if (started || !on) return; started = true;
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -445,7 +470,19 @@ const Music = (() => {
     if (on && !started) start();
     else if (ctx && master) master.gain.linearRampToValueAtTime(on ? .9 : 0, ctx.currentTime + 1.5);
   });
-  return { start, chime() { if (!ctx) return; const t = ctx.currentTime; [76,79,84,88].forEach((n,i) => bell(n, t + i * .35, .08)); } };
+  function chime() {
+    const c = chimeCtx || ctx; if (!c) return;
+    try { c.resume(); } catch {}
+    const t = c.currentTime;
+    [76, 79, 84, 88, 84, 88].forEach((n, i) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f(n);
+      g.gain.setValueAtTime(0, t + i * .4); g.gain.linearRampToValueAtTime(.18, t + i * .4 + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, t + i * .4 + 3.5);
+      o.connect(g).connect(c.destination); o.start(t + i * .4); o.stop(t + i * .4 + 3.6);
+    });
+  }
+  return { start, chime };
 })();
 
 
@@ -469,7 +506,7 @@ const LOCAL_KEY = 'bombadoos-db';
 const SEED = [['spont','sand forming'],['spont','wave dancing'],['spont','tree climbing'],['spont','handstands'],
     ['spont','playing music'],['spont','filming / recording'],['spont','audio recording'],['spont','spontaneous drawing'],
     ['spont','writing'],['spont','poetry'],['spont','singing'],['spont','dancing'],
-    ['creative','cave game'],['creative','editing this website'],['creative','weekly youtube video'],
+    ['creative','cave game'],['creative','Edit this website'],['creative','weekly youtube video'],
     ['life','working in antarctica'],['life','living / working on a boat']];
 function localDb() {
   const KEY = LOCAL_KEY;
