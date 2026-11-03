@@ -78,7 +78,13 @@ body[data-phase="night"] .sun { opacity: .9; width: 10vmin; height: 10vmin; marg
   background: radial-gradient(circle, #f4f6ff 0 38%, rgba(220,230,255,.35) 46%, transparent 70%); }
 body[data-weather="rain"] .sun, body[data-weather="cloudy"] .sun { opacity: .25; }
 main, .centerbar, .sound { z-index: 2; }
-body:has(#overlay .over, #centerspace .over) main { visibility: hidden; }
+body:has(#overlay .over, #centerspace .over, #signin .over) main { visibility: hidden; }
+body:has(#signin .over) .centerbar { display: none; }
+.signin { z-index: 9; }
+.signin form { display: flex; gap: .5rem; justify-content: center; }
+.signin input { font: inherit; color: var(--fg); background: var(--btn); border: 1px solid var(--line); border-radius: 18px; padding: .7rem 1rem; width: min(70vw, 18rem); }
+.signin form button { font-size: 1.3rem; width: 48px; border-radius: 18px; background: var(--btn); border: 1px solid var(--line); }
+.signin .local { color: var(--muted); font-size: .8rem; letter-spacing: .2em; justify-self: center; padding: .5rem; }
 .dice { justify-self: center; font-size: 1.4rem; width: 48px; height: 48px; border-radius: 50%; color: var(--fg);
   background: var(--btn); border: 1px solid var(--line); transition: transform .4s; }
 .dice:hover { transform: rotate(72deg); }
@@ -181,6 +187,7 @@ main { padding-bottom: 11rem; }
 <button class="sound" id="sound" aria-pressed="true" aria-label="Music">♪</button>
 <div class="centerbar"><button class="centerbtn" id="centerbtn">center first</button></div>
 <div id="centerspace"></div>
+<div id="signin"></div>
 
 <script>
 /* lists: spont = spontaneous, creative = deep (1h timer), archc + life = archetypal */
@@ -435,13 +442,14 @@ $('#centerbtn').addEventListener('click', e => {
 });
 
 /* ---------- local storage fallback (when opened outside claude.ai, e.g. GitHub Pages) ---------- */
-function localDb() {
-  const KEY = 'bombadoos-db';
-  const SEED = [['spont','sand forming'],['spont','wave dancing'],['spont','tree climbing'],['spont','handstands'],
+const LOCAL_KEY = 'bombadoos-db';
+const SEED = [['spont','sand forming'],['spont','wave dancing'],['spont','tree climbing'],['spont','handstands'],
     ['spont','playing music'],['spont','filming / recording'],['spont','audio recording'],['spont','spontaneous drawing'],
     ['spont','writing'],['spont','poetry'],['spont','singing'],['spont','dancing'],
     ['creative','cave game'],['creative','editing this website'],['creative','weekly youtube video'],
     ['life','working in antarctica'],['life','living / working on a boat']];
+function localDb() {
+  const KEY = LOCAL_KEY;
   let store;
   try { store = JSON.parse(localStorage.getItem(KEY)); } catch {}
   if (!store) {
@@ -578,11 +586,105 @@ const Sky = (() => {
   return { set(p, w) { if (p) body.dataset.phase = phase = p; if (w) { weather = w; body.dataset.weather = w; seed(); } } };
 })();
 
+/* ---------- cloud sync for the GitHub site (Supabase): same lists on every device ---------- */
+const SUPA_URL = 'https://slqzqslopatgncmzpcfw.supabase.co';
+const SUPA_KEY = 'sb_publishable_Y1r8QxKysAKcOrgHxyttlg_g_g0SsZN';  // publishable key: safe in public code; rows are locked to the signed-in user
+function loadScript(src) {
+  return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
+}
+function signInScreen(sb) {
+  return new Promise(resolve => {
+    const box = $('#signin');
+    box.innerHTML = `<div class="over signin">
+      <p class="big">bombadoos</p>
+      <form id="signin-form"><input id="signin-email" type="email" required autocomplete="email" placeholder="email" aria-label="Email">
+        <button aria-label="Send sign-in link">→</button></form>
+      <p class="small" id="signin-msg"></p>
+      <button class="local" id="signin-local">this device only</button></div>`;
+    const done = v => { box.innerHTML = ''; resolve(v); };
+    $('#signin-local').onclick = () => done(null);
+    $('#signin-form').onsubmit = async e => {
+      e.preventDefault();
+      const msg = $('#signin-msg'); msg.textContent = '…';
+      const { error } = await sb.auth.signInWithOtp({ email: $('#signin-email').value.trim(),
+        options: { emailRedirectTo: location.origin + location.pathname } });
+      msg.textContent = error ? (error.message || 'Could not send the link. Try again in a minute.') : 'check your email';
+    };
+    sb.auth.onAuthStateChange((ev, session) => { if (session && box.innerHTML) done(session); });
+  });
+}
+async function cloudDb() {
+  try { await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'); }
+  catch { return null; }
+  const sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' } });
+  let { data: { session } } = await sb.auth.getSession();
+  if (!session) session = await signInScreen(sb);
+  if (!session) return null;
+  if (location.hash.includes('access_token')) history.replaceState(null, '', location.pathname + location.search);
+  const uid = session.user.id;
+
+  let cache = {}, timerRow = null;
+  const itemSubs = [], timerSubs = [];
+  const emitItems = () => itemSubs.forEach(f => f()), emitTimer = () => timerSubs.forEach(f => f());
+  async function pull() {
+    const { data, error } = await sb.from('items').select('*'); if (error) throw error;
+    cache = {}; data.forEach(r => cache[r.id] = r); emitItems();
+    const t = await sb.from('timer').select('*').maybeSingle();
+    timerRow = t.data && t.data.start ? t.data : null; emitTimer();
+  }
+  await pull();
+  if (!Object.keys(cache).length) {
+    // First sign-in: bring over whatever this browser already had (or the starting lists).
+    let local = null; try { local = JSON.parse(localStorage.getItem(LOCAL_KEY))?.items; } catch {}
+    const rows = local && Object.keys(local).length
+      ? Object.entries(local).map(([id, d]) => ({ id: uid.slice(0, 8) + '-' + id, user_id: uid, list: d.list, name: d.name, last: d.last ?? null, count: d.count || 0, created: d.created || 0 }))
+      : SEED.map(([list, name], i) => ({ id: uid.slice(0, 8) + '-s' + i, user_id: uid, list, name, last: null, count: 0, created: i }));
+    const { error } = await sb.from('items').upsert(rows); if (error) console.warn(error);
+    await pull();
+  }
+  sb.channel('bombadoos-' + uid)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, p => {
+      if (p.eventType === 'DELETE') delete cache[p.old.id]; else cache[p.new.id] = p.new; emitItems(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'timer' }, p => {
+      timerRow = p.eventType === 'DELETE' || !p.new.start ? null : p.new; emitTimer(); })
+    .subscribe();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pull().catch(() => {}); });
+
+  const meta = { fromCache: false, hasPendingWrites: false };
+  const check = async q => { const { error } = await q; if (error) { console.warn(error); pull().catch(() => {}); } };
+  const itemRef = id => ({
+    id,
+    set: async v => { cache[id] = { id, user_id: uid, ...v }; emitItems(); await check(sb.from('items').upsert({ id, user_id: uid, ...v })); },
+    update: async v => { if (cache[id]) Object.assign(cache[id], v); emitItems(); await check(sb.from('items').update(v).eq('id', id)); },
+    delete: async () => { delete cache[id]; emitItems(); await check(sb.from('items').delete().eq('id', id)); },
+  });
+  const timerDoc = () => timerRow && { id: timerRow.item_id, name: timerRow.name, start: timerRow.start };
+  return {
+    collection: () => ({
+      doc: id => itemRef(id || uid.slice(0, 8) + '-' + Math.random().toString(36).slice(2, 12)),
+      onSnapshot: next => {
+        const f = () => next({ docs: Object.values(cache).map(r => ({ id: r.id, exists: true,
+          data: () => ({ list: r.list, name: r.name, last: r.last, count: r.count, created: r.created }), metadata: meta })), metadata: meta });
+        itemSubs.push(f); setTimeout(f); return () => {};
+      },
+    }),
+    doc: () => ({
+      onSnapshot: next => { const f = () => next({ id: 'timer', exists: !!timerRow, data: timerDoc, metadata: meta }); timerSubs.push(f); setTimeout(f); return () => {}; },
+      set: async v => { timerRow = { item_id: v.id, name: v.name, start: v.start }; emitTimer();
+        await check(sb.from('timer').upsert({ user_id: uid, item_id: v.id, name: v.name, start: v.start })); },
+      delete: async () => { timerRow = null; emitTimer();
+        await check(sb.from('timer').upsert({ user_id: uid, item_id: null, name: null, start: null })); },
+    }),
+  };
+}
+
 /* ---------- data ---------- */
 render();
 (async () => {
   const loadTimer = setTimeout(() => { if (!loaded) { dbMissing = true; render(); } }, 10000);
   db = window.claude?.use ? await window.claude.use('db') : null;
+  const onWeb = !window.claude && location.protocol === 'https:';
+  if (!db && onWeb) { clearTimeout(loadTimer); try { db = await cloudDb(); } catch (e) { console.warn(e); } }
   if (!db) db = localDb();
   db.collection('items').onSnapshot(snap => {
     items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
