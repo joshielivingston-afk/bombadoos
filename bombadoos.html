@@ -52,7 +52,12 @@ body {
 @keyframes drift2 { to { transform: translate(-8%, 3%) scale(1.1); } }
 
 /* ---- living sky: phase (time of day), weather, season ---- */
-:root { --sky-mid: var(--sky-low); --cloud: .9; }
+:root { --sky-mid: var(--sky-low); --cloud: .9; --orb: 255, 220, 110; }
+/* center-first orb: its color follows only the time of day */
+body[data-phase="dawn"]    { --orb: 255, 238, 170; }  /* pale yellow */
+body[data-phase="day"]     { --orb: 255, 214, 90; }   /* sunny yellow */
+body[data-phase="evening"] { --orb: 255, 105, 50; }   /* deep red-orange */
+body[data-phase="night"]   { --orb: 228, 236, 255; }  /* pale moon white */
 body[data-phase="dawn"]    { --sky-top: #e9dcf3; --sky-mid: #f6e1ec; --sky-low: #ffeadf; --fg: #4b4466; --muted: #8a7fa6; --line: #e6d8ec; --btn: rgba(255,255,255,.6); --item: rgba(255,255,255,.92); --glow: 255, 200, 215; --cloud: .55; color-scheme: light; }
 body[data-phase="day"]     { --sky-top: #3aa6ff; --sky-mid: #8dd0ff; --sky-low: #d6efff; --fg: #0c2d4f; --muted: #2d6596; --line: rgba(255,255,255,.85); --btn: rgba(255,255,255,.85); --item: rgba(255,255,255,.94); --glow: 255, 236, 170; --cloud: 1; color-scheme: light; }
 body[data-phase="evening"] { --sky-top: #27336e; --sky-mid: #a5577e; --sky-low: #ffb067; --fg: #fff5ec; --muted: #ffdcc4; --line: rgba(255,255,255,.3);  --btn: rgba(255,255,255,.14); --item: rgba(66,54,108,.92); --glow: 255, 190, 120; --cloud: .35; color-scheme: dark; }
@@ -163,8 +168,8 @@ main { padding-bottom: 0; }
 .centering .centerbar { display: none; }
 .center { z-index: 8; overflow: hidden; }
 .center .orb { width: min(60vw, 60vh); aspect-ratio: 1; max-width: 100%; border-radius: 50%; margin: 0 auto;
-  background: radial-gradient(circle, #ffffff 0%, rgba(var(--glow), .9) 35%, rgba(var(--glow), .25) 60%, transparent 72%);
-  filter: blur(6px); animation: breath 11s ease-in-out infinite, hue 90s ease-in-out infinite alternate; }
+  background: radial-gradient(circle, #ffffff 0%, rgba(var(--orb), .92) 35%, rgba(var(--orb), .28) 60%, transparent 72%);
+  filter: blur(6px); animation: breath 11s ease-in-out infinite; }
 @keyframes breath { 0%, 100% { transform: scale(.55); opacity: .55; } 45% { transform: scale(1.05); opacity: 1; } }
 @keyframes hue { from { filter: blur(6px) hue-rotate(0deg); } to { filter: blur(6px) hue-rotate(40deg) brightness(1.15); } }
 .center .small { position: absolute; left: 0; right: 0; bottom: calc(18vh + env(safe-area-inset-bottom, 0px)); letter-spacing: .5em; animation: fade 4s ease; }
