@@ -49,8 +49,39 @@ body {
   background: radial-gradient(45% 35% at 50% 0%, rgba(255,255,255,.5), transparent 70%); }
 @keyframes drift { to { transform: translate(6%, -4%) scale(1.08); } }
 @keyframes drift2 { to { transform: translate(-8%, 3%) scale(1.1); } }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .clouds { opacity: .12; } }
-:root[data-theme="dark"] .clouds { opacity: .12; }
+
+/* ---- living sky: phase (time of day), weather, season ---- */
+:root { --sky-mid: var(--sky-low); --cloud: .9; }
+body[data-phase="dawn"]    { --sky-top: #e9dcf3; --sky-mid: #f6e1ec; --sky-low: #ffeadf; --fg: #4b4466; --muted: #8a7fa6; --line: #e6d8ec; --btn: rgba(255,255,255,.6);  --glow: 255, 200, 215; --cloud: .55; color-scheme: light; }
+body[data-phase="day"]     { --sky-top: #3aa6ff; --sky-mid: #8dd0ff; --sky-low: #d6efff; --fg: #0c2d4f; --muted: #2d6596; --line: rgba(255,255,255,.85); --btn: rgba(255,255,255,.85); --glow: 255, 236, 170; --cloud: 1; color-scheme: light; }
+body[data-phase="evening"] { --sky-top: #27336e; --sky-mid: #a5577e; --sky-low: #ffb067; --fg: #fff5ec; --muted: #ffdcc4; --line: rgba(255,255,255,.3);  --btn: rgba(255,255,255,.14); --glow: 255, 190, 120; --cloud: .35; color-scheme: dark; }
+body[data-phase="night"]   { --sky-top: #030817; --sky-mid: #0a1631; --sky-low: #172b52; --fg: #e6eeff; --muted: #93a8d4; --line: rgba(255,255,255,.14); --btn: rgba(255,255,255,.06); --glow: 150, 190, 255; --cloud: .07; color-scheme: dark; }
+body[data-phase] .clouds { opacity: var(--cloud); }
+body[data-weather="cloudy"] { --cloud: 1; }
+.skybg, .weathertint, #skycanvas, .sun { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.skybg { background: linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-low)); transition: filter 4s; }
+body[data-season="winter"] .skybg { filter: saturate(.8) brightness(1.04); }
+body[data-season="spring"] .skybg { filter: hue-rotate(-6deg) saturate(1.05); }
+body[data-season="summer"] .skybg { filter: saturate(1.18); }
+body[data-season="autumn"] .skybg { filter: sepia(.18) saturate(1.1); }
+.weathertint { opacity: 0; transition: opacity 4s; background: linear-gradient(180deg, #6f7f93, #a9b4c2); }
+body[data-weather="cloudy"] .weathertint { opacity: .22; }
+body[data-weather="rain"] .weathertint { opacity: .42; }
+body[data-weather="snow"] .weathertint { opacity: .18; background: #e9eef5; }
+#skycanvas { width: 100%; height: 100%; }
+.sun { inset: auto; left: 68%; top: 0; width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin; border-radius: 50%; opacity: 0;
+  transition: top 60s linear, opacity 4s; }
+body[data-phase="evening"] .sun { opacity: 1; background: radial-gradient(circle, #fff2c6 0 14%, #ffc46b 22%, rgba(255,140,80,.55) 40%, rgba(255,120,90,.18) 60%, transparent 72%); }
+body[data-phase="dawn"] .sun { opacity: .75; background: radial-gradient(circle, #fffaf0 0 10%, rgba(255,214,222,.7) 26%, rgba(255,220,230,.25) 50%, transparent 70%); }
+body[data-phase="day"] .sun { opacity: .9; background: radial-gradient(circle, #ffffff 0 9%, rgba(255,255,235,.75) 18%, rgba(255,255,255,.25) 40%, transparent 65%); }
+body[data-phase="night"] .sun { opacity: .9; width: 10vmin; height: 10vmin; margin: -5vmin 0 0 -5vmin;
+  background: radial-gradient(circle, #f4f6ff 0 38%, rgba(220,230,255,.35) 46%, transparent 70%); }
+body[data-weather="rain"] .sun, body[data-weather="cloudy"] .sun { opacity: .25; }
+main, .centerbar, .sound { z-index: 2; }
+body:has(#overlay .over, #centerspace .over) main { visibility: hidden; }
+.dice { justify-self: center; font-size: 1.4rem; width: 48px; height: 48px; border-radius: 50%; color: var(--fg);
+  background: var(--btn); border: 1px solid var(--line); transition: transform .4s; }
+.dice:hover { transform: rotate(72deg); }
 
 main { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding-block: 6vh 6rem; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
@@ -98,7 +129,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* overlays */
 .over { position: fixed; inset: 0; z-index: 5; display: grid; place-content: center; text-align: center; gap: 1.5rem;
-  background: linear-gradient(180deg, var(--sky-top), var(--sky-low)); animation: fade .8s ease;
+  background: transparent; animation: fade .8s ease;
   padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px)); }
 @keyframes fade { from { opacity: 0; } }
 .over .big { font-family: var(--display); font-size: clamp(3rem, 14vw, 6rem); margin: 0; line-height: 1.05;
@@ -120,7 +151,7 @@ main { padding-bottom: 11rem; }
   background: linear-gradient(0deg, var(--sky-low) 40%, transparent); pointer-events: none; }
 .centerbtn { pointer-events: auto; width: min(100%, 640px); padding: 1.4rem 1rem; border-radius: 28px;
   font-family: var(--display); font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: .06em; color: var(--fg);
-  background: var(--btn); border: 1px solid var(--line); box-shadow: 0 0 40px rgba(var(--glow), .35);
+  background: color-mix(in srgb, var(--sky-low) 82%, #ffffff 18%); border: 1px solid var(--line); box-shadow: 0 0 40px rgba(var(--glow), .35);
   animation: soft 7s ease-in-out infinite; }
 @keyframes soft { 50% { box-shadow: 0 0 70px rgba(var(--glow), .6); } }
 .centering .centerbar { display: none; }
@@ -140,7 +171,11 @@ main { padding-bottom: 11rem; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 
+<div class="skybg" aria-hidden="true"></div>
+<div class="sun" aria-hidden="true"></div>
+<canvas id="skycanvas" aria-hidden="true"></canvas>
 <div class="clouds" aria-hidden="true"></div>
+<div class="weathertint" aria-hidden="true"></div>
 <main id="app"></main>
 <div id="overlay"></div>
 <button class="sound" id="sound" aria-pressed="true" aria-label="Music">♪</button>
@@ -151,6 +186,12 @@ main { padding-bottom: 11rem; }
 /* lists: spont = spontaneous, creative = deep (1h timer), archc + life = archetypal */
 const HOUR = 3600e3;
 let openDoor = null, panelFresh = false;
+const RANDOM_LISTS = { spontaneous: ['spont'], deep: ['creative'], archetypal: ['archc', 'life'] };
+document.addEventListener('click', e => {
+  const r = e.target.closest('[data-random]'); if (!r) return;
+  const pool = items.filter(i => RANDOM_LISTS[r.dataset.random].includes(i.list));
+  if (pool.length) touch(pool[Math.floor(Math.random() * pool.length)].id, true);
+});
 document.addEventListener('click', e => {
   const d = e.target.closest('[data-door]'); if (!d) return;
   openDoor = openDoor === d.dataset.door ? null : d.dataset.door; panelFresh = true; render();
@@ -194,7 +235,8 @@ function render() {
     ${dbMissing ? `<p class="note">Open this page signed in to claude.ai to save.</p>` : ''}
     <nav class="doors">${['spontaneous', 'deep', 'archetypal'].map(s =>
       `<button class="door" data-door="${s}" aria-pressed="${openDoor === s}">${s}</button>`).join('')}</nav>
-    ${openDoor ? `<section class="panel" ${panelFresh ? 'data-fresh' : ''}>${
+    ${openDoor ? `<section class="panel" ${panelFresh ? 'data-fresh' : ''}>
+      <button class="dice" data-random="${openDoor}" aria-label="Pick one for me">✦</button>${
       openDoor === 'spontaneous' ? list('spont') :
       openDoor === 'deep' ? list('creative') :
       `<div class="arch"><div class="col"><p class="sub">creative</p>${list('archc')}</div>
@@ -251,14 +293,15 @@ async function finishTimer() {
 }
 
 /* ---------- actions ---------- */
-async function touch(id) {
+async function touch(id, picked = false) {
   const it = items.find(i => i.id === id); if (!it) return;
   const now = Date.now();
   lastLifted = id;
   it.last = now; it.count = (it.count || 0) + 1;
   try { await db.collection('items').doc(id).update({ last: now, count: it.count }); } catch (e) { console.warn(e); }
   if (it.list === 'spont') {
-    showOverlay(`<p class="big">enjoy</p>`, () => { closeOverlay(); render(); });
+    showOverlay(picked ? `<p class="big">${esc(it.name)}</p><p class="small">enjoy</p>` : `<p class="big">enjoy</p>`,
+      () => { closeOverlay(); render(); });
   } else if (it.list === 'creative') {
     timer = { id, name: it.name, start: now }; leftTimer = false; chimed = false;
     renderTimer();
@@ -428,6 +471,112 @@ function localDb() {
     doc: path => { const [col, id] = path.split('/'); return docRef(col, id); },
   };
 }
+
+/* ---------- living sky: local time, season, and (where allowed) local weather ---------- */
+const Sky = (() => {
+  const body = document.body, cv = $('#skycanvas'), cx = cv.getContext('2d'), sun = $('.sun');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let coords = null, sunTimes = null, weather = 'clear', phase = 'day', W = 0, H = 0, stars = [], drops = [];
+  try { coords = JSON.parse(localStorage.getItem('sky-coords')); } catch {}
+  const MIN = 60e3;
+
+  function seasonOf(d) {
+    const m = d.getMonth();
+    let s = m === 11 || m < 2 ? 'winter' : m < 5 ? 'spring' : m < 8 ? 'summer' : 'autumn';
+    if (coords && coords.lat < 0) s = { winter: 'summer', summer: 'winter', spring: 'autumn', autumn: 'spring' }[s];
+    return s;
+  }
+  function sunToday(now) {
+    const day = now.toDateString();
+    if (sunTimes && sunTimes.day === day) return sunTimes;
+    // No location: a gentle seasonal guess (mid-latitudes).
+    const doy = (now - new Date(now.getFullYear(), 0, 0)) / 864e5;
+    let swing = Math.cos((doy - 172) / 365 * 2 * Math.PI);  // +1 midsummer, -1 midwinter
+    if (coords && coords.lat < 0) swing = -swing;
+    const mid = new Date(now); mid.setHours(12, 45, 0, 0);
+    const half = (6 + 1.8 * swing) * 60 * MIN;
+    return { day, rise: +mid - half, set: +mid + half };
+  }
+  function update() {
+    const now = new Date(), t = +now, { rise, set } = sunToday(now);
+    let p, y;
+    if (t >= rise - 50 * MIN && t < rise + 80 * MIN) { phase = 'dawn'; p = (t - (rise - 50 * MIN)) / (130 * MIN); y = 98 - p * 22; }
+    else if (t >= rise + 80 * MIN && t < set - 90 * MIN) { phase = 'day'; p = (t - rise) / (set - rise); y = 34 - Math.sin(p * Math.PI) * 18; }
+    else if (t >= set - 90 * MIN && t < set + 40 * MIN) { phase = 'evening'; p = (t - (set - 90 * MIN)) / (130 * MIN); y = 42 + p * 70; }
+    else { phase = 'night'; y = 14; }
+    body.dataset.phase = phase;
+    body.dataset.season = seasonOf(now);
+    body.dataset.weather = weather;
+    sun.style.top = y + '%';
+    seed();
+  }
+  function resize() {
+    const r = devicePixelRatio || 1; W = innerWidth; H = innerHeight;
+    cv.width = W * r; cv.height = H * r; cx.setTransform(r, 0, 0, r, 0, 0); seed(true);
+  }
+  function seed(force) {
+    if (force || !stars.length) stars = Array.from({ length: Math.round(W * H / 2600) }, () =>
+      ({ x: Math.random() * W, y: Math.random() * H * .85, r: Math.random() * 1.2 + .2, s: Math.random() * 6 }));
+    const want = weather === 'rain' ? Math.round(W / 4) : weather === 'snow' ? Math.round(W / 9) : 0;
+    if (drops.length !== want || force) drops = Array.from({ length: want }, () =>
+      ({ x: Math.random() * W, y: Math.random() * H, v: weather === 'rain' ? 9 + Math.random() * 7 : .6 + Math.random() * 1.2, l: 8 + Math.random() * 14 }));
+  }
+  function frame(ts) {
+    cx.clearRect(0, 0, W, H);
+    const sec = ts / 1000;
+    if (phase === 'night' || phase === 'evening' || phase === 'dawn') {
+      const a = phase === 'night' ? 1 : .25;
+      cx.fillStyle = '#ffffff';
+      for (const s of stars) {
+        if (phase !== 'night' && s.y > H * .35) continue;
+        cx.globalAlpha = a * (.35 + .65 * Math.abs(Math.sin(sec * .6 + s.s)));
+        cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 7); cx.fill();
+      }
+    }
+    if (weather === 'rain') {
+      cx.globalAlpha = .45; cx.strokeStyle = phase === 'night' ? '#9fb6dd' : '#ffffff'; cx.lineWidth = 1;
+      cx.beginPath();
+      for (const d of drops) { cx.moveTo(d.x, d.y); cx.lineTo(d.x - 2, d.y + d.l); d.y += d.v; d.x -= .3;
+        if (d.y > H) { d.y = -d.l; d.x = Math.random() * W; } }
+      cx.stroke();
+    } else if (weather === 'snow') {
+      cx.globalAlpha = .85; cx.fillStyle = '#ffffff';
+      for (const d of drops) { cx.beginPath(); cx.arc(d.x, d.y, d.l / 8, 0, 7); cx.fill();
+        d.y += d.v; d.x += Math.sin(sec + d.l) * .4; if (d.y > H) { d.y = -4; d.x = Math.random() * W; } }
+    }
+    cx.globalAlpha = 1;
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  async function fetchWeather() {
+    if (!coords) return;
+    try {
+      const u = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}` +
+        `&current=weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=1`;
+      const j = await (await fetch(u)).json();
+      const c = j.current.weather_code;
+      weather = (c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95 ? 'rain'
+        : (c >= 71 && c <= 77) || c === 85 || c === 86 ? 'snow'
+        : c === 3 || c === 45 || c === 48 ? 'cloudy' : 'clear';
+      sunTimes = { day: new Date().toDateString(), rise: +new Date(j.daily.sunrise[0]), set: +new Date(j.daily.sunset[0]) };
+      update();
+    } catch {}  // weather is a nicety; the sky still follows the clock without it
+  }
+  function locate() {
+    try {
+      navigator.geolocation.getCurrentPosition(pos => {
+        coords = { lat: +pos.coords.latitude.toFixed(2), lon: +pos.coords.longitude.toFixed(2) };
+        try { localStorage.setItem('sky-coords', JSON.stringify(coords)); } catch {}
+        fetchWeather();
+      }, () => {}, { timeout: 15000, maximumAge: 6 * 3600e3 });
+    } catch {}
+  }
+  addEventListener('resize', resize);
+  resize(); update(); requestAnimationFrame(frame);
+  fetchWeather(); if (!coords) locate();
+  setInterval(update, MIN);
+  setInterval(fetchWeather, 30 * MIN);
+  return { set(p, w) { if (p) body.dataset.phase = phase = p; if (w) { weather = w; body.dataset.weather = w; seed(); } } };
+})();
 
 /* ---------- data ---------- */
 render();
