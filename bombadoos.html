@@ -151,10 +151,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .done { letter-spacing: .3em; color: var(--fg); background: var(--btn); border: 1px solid var(--line); border-radius: 18px; padding: .7rem 1.8rem; justify-self: center; }
 .leave { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); font-family: var(--display); font-size: 1.6rem; color: var(--muted); padding: .3rem .6rem; }
 
-main { padding-bottom: 11rem; }
-.centerbar { position: fixed; z-index: 7; left: 0; right: 0; bottom: 0; display: flex; justify-content: center;
-  padding: 1rem max(16px, env(safe-area-inset-right, 0px)) calc(1.2rem + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  background: linear-gradient(0deg, var(--sky-low) 40%, transparent); pointer-events: none; }
+main { padding-bottom: 0; }
+.centerbar { position: relative; display: flex; justify-content: center;
+  padding-block: clamp(2.5rem, 9vh, 5rem) calc(4rem + env(safe-area-inset-bottom, 0px)); }
 .centerbtn { pointer-events: auto; width: min(100%, 640px); padding: 1.4rem 1rem; border-radius: 28px;
   font-family: var(--display); font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: .06em; color: var(--fg);
   background: color-mix(in srgb, var(--sky-low) 82%, #ffffff 18%); border: 1px solid var(--line); box-shadow: 0 0 40px rgba(var(--glow), .35);
@@ -170,7 +169,7 @@ main { padding-bottom: 11rem; }
 .center .small { position: absolute; left: 0; right: 0; bottom: calc(18vh + env(safe-area-inset-bottom, 0px)); letter-spacing: .5em; animation: fade 4s ease; }
 .center.leaving { animation: out 3s ease forwards; }
 @keyframes out { to { opacity: 0; } }
-.sound { position: fixed; z-index: 6; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+.sound { position: fixed; z-index: 6; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   width: 44px; height: 44px; border-radius: 50%; color: var(--muted); font-size: 1.1rem; opacity: .7; }
 .sound[aria-pressed="false"] { text-decoration: line-through; opacity: .4; }
 
