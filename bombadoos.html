@@ -105,7 +105,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 :focus-visible { outline: 1px solid var(--muted); outline-offset: 4px; border-radius: 6px; }
 
 .word { font-family: var(--display); font-weight: 400; font-size: clamp(3.2rem, 12vw, 6rem);
-  text-align: center; letter-spacing: .02em; margin: 14vh 0 3.5rem; line-height: 1;
+  text-align: center; letter-spacing: .02em; margin: 9vh 0 2.6rem; line-height: 1;
   text-shadow: 0 0 40px rgba(var(--glow), .6); animation: breathe 8s ease-in-out infinite; }
 @keyframes breathe { 50% { text-shadow: 0 0 70px rgba(var(--glow), .95); } }
 
@@ -162,21 +162,22 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .done { letter-spacing: .3em; color: var(--fg); background: var(--btn); border: 1px solid var(--line); border-radius: 18px; padding: .7rem 1.8rem; justify-self: center; }
 .leave { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px)); font-family: var(--display); font-size: 1.6rem; color: var(--muted); padding: .3rem .6rem; }
 
-main { padding-bottom: 0; }
-.centerbar { position: relative; display: flex; justify-content: center;
-  padding-block: clamp(2.5rem, 9vh, 5rem) calc(4rem + env(safe-area-inset-bottom, 0px)); }
-.centerbtn { pointer-events: auto; width: min(100%, 640px); padding: 1.4rem 1rem; border-radius: 28px;
-  font-family: var(--display); font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: .06em; color: var(--fg);
+main { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+.centerbar { position: relative; display: grid; justify-items: center; gap: .9rem; margin: 0 auto 2.6rem; max-width: 720px; }
+.centerbtn { pointer-events: auto; width: 100%; padding: 2.1rem 1rem; border-radius: 34px;
+  font-family: var(--display); font-size: clamp(2.4rem, 9vw, 3.8rem); letter-spacing: .06em; color: var(--fg); line-height: 1;
   background: var(--b-solid); border: 1px solid var(--line); box-shadow: 0 0 40px rgba(var(--glow), .35);
   animation: soft 7s ease-in-out infinite; }
 @keyframes soft { 50% { box-shadow: 0 0 70px rgba(var(--glow), .6); } }
-.centering .centerbar { display: none; }
+.centerdoor { width: min(100%, 15rem); padding: .8rem .3rem; }
+.centerbar + .panel { margin-bottom: 2.6rem; }
 .center { z-index: 8; overflow: hidden; }
 .center .orb { width: min(60vw, 60vh); aspect-ratio: 1; max-width: 100%; border-radius: 50%; margin: 0 auto;
   background: radial-gradient(circle, #ffffff 0%, rgba(var(--orb), .92) 35%, rgba(var(--orb), .28) 60%, transparent 72%);
   filter: blur(6px); animation: breath 11s ease-in-out infinite; }
 @keyframes breath { 0%, 100% { transform: scale(.55); opacity: .55; } 45% { transform: scale(1.05); opacity: 1; } }
 @keyframes hue { from { filter: blur(6px) hue-rotate(0deg); } to { filter: blur(6px) hue-rotate(40deg) brightness(1.15); } }
+.center .activity { position: absolute; left: 0; right: 0; top: calc(12vh + env(safe-area-inset-top, 0px)); font-size: clamp(2.2rem, 10vw, 4rem); padding-inline: 16px; }
 .center .small { position: absolute; left: 0; right: 0; bottom: calc(18vh + env(safe-area-inset-bottom, 0px)); letter-spacing: .5em; animation: fade 4s ease; }
 .center.leaving { animation: out 3s ease forwards; }
 @keyframes out { to { opacity: 0; } }
@@ -195,7 +196,6 @@ main { padding-bottom: 0; }
 <main id="app"></main>
 <div id="overlay"></div>
 <button class="sound" id="sound" aria-pressed="true" aria-label="Music">♪</button>
-<div class="centerbar"><button class="centerbtn" id="centerbtn">center first</button></div>
 <div id="centerspace"></div>
 <div id="signin"></div>
 
@@ -203,7 +203,7 @@ main { padding-bottom: 0; }
 /* lists: spont = spontaneous, creative = deep (1h timer), archc + life = archetypal */
 const HOUR = 3600e3;
 let openDoor = null, panelFresh = false;
-const RANDOM_LISTS = { spontaneous: ['spont'], deep: ['creative'], archetypal: ['archc', 'life'] };
+const RANDOM_LISTS = { centering: ['center'], spontaneous: ['spont'], deep: ['creative'], archetypal: ['archc', 'life'] };
 document.addEventListener('click', e => {
   const r = e.target.closest('[data-random]'); if (!r) return;
   const pool = items.filter(i => RANDOM_LISTS[r.dataset.random].includes(i.list));
@@ -229,6 +229,9 @@ const MIGRATIONS = [
   { id: 'm-learning-spanish', add: { id: 'deep-learning-spanish', list: 'creative', name: 'Learn Spanish' } },
   { id: 'm-rename-edit-website', rename: { list: 'creative', from: 'editing this website', to: 'Edit this website' } },
   { id: 'm-rename-learn-spanish', rename: { list: 'creative', from: 'learning spanish', to: 'Learn Spanish' } },
+  { id: 'm-centering-starters', add: ['Breath hold', 'Box breathing', 'Long slow exhales', 'Stretch', 'Neck and shoulder rolls',
+      'Forward fold', 'Shake it out', 'Jumping jacks', 'Squats', 'Push-ups', 'Plank', 'Walk outside', 'Cold water splash']
+      .map((name, i) => ({ id: 'center-' + i, list: 'center', name, created: Date.now() + i })) },
 ];
 let migrated = false;
 async function runMigrations() {
@@ -236,9 +239,9 @@ async function runMigrations() {
   for (const m of MIGRATIONS) {
     if (items.some(i => i.id === m.id)) continue;
     try {
-      if (m.add) {
-        const { id, ...row } = m.add;
-        await db.collection('items').doc(id).set({ ...row, last: null, count: 0, created: Date.now() });
+      for (const a of [].concat(m.add || [])) {
+        const { id, ...row } = a;
+        await db.collection('items').doc(id).set({ created: Date.now(), ...row, last: null, count: 0 });
       }
       if (m.rename) {
         const r = m.rename;
@@ -285,18 +288,25 @@ function render() {
   $('#app').innerHTML = `
     <h1 class="word">bombadoos</h1>
     ${dbMissing ? `<p class="note">Open this page signed in to claude.ai to save.</p>` : ''}
+    <div class="centerbar"><button class="centerbtn" id="centerbtn">center first</button>
+      <button class="door centerdoor" data-door="centering" aria-pressed="${openDoor === 'centering'}">centering</button></div>
+    ${openDoor === 'centering' ? panel() : ''}
     <nav class="doors">${['spontaneous', 'deep', 'archetypal'].map(s =>
       `<button class="door" data-door="${s}" aria-pressed="${openDoor === s}">${s}</button>`).join('')}</nav>
-    ${openDoor ? `<section class="panel" ${panelFresh ? 'data-fresh' : ''}>
-      <button class="dice" data-random="${openDoor}" aria-label="Pick one for me">✦</button>${
-      openDoor === 'spontaneous' ? list('spont') :
-      openDoor === 'deep' ? list('creative') :
-      `<div class="arch"><div class="col"><p class="sub">creative</p>${list('archc')}</div>
-       <div class="col"><p class="sub">life</p>${list('life')}</div></div>`}</section>` : ''}`;
+    ${openDoor && openDoor !== 'centering' ? panel() : ''}`;
   panelFresh = false;
   lastLifted = null;
   if (focused && focused.startsWith('add-')) $('#' + focused)?.focus();
   renderTimer();
+}
+function panel() {
+  return `<section class="panel" ${panelFresh ? 'data-fresh' : ''}>
+      <button class="dice" data-random="${openDoor}" aria-label="Pick one for me">✦</button>${
+      openDoor === 'centering' ? list('center') :
+      openDoor === 'spontaneous' ? list('spont') :
+      openDoor === 'deep' ? list('creative') :
+      `<div class="arch"><div class="col"><p class="sub">creative</p>${list('archc')}</div>
+       <div class="col"><p class="sub">life</p>${list('life')}</div></div>`}</section>`;
 }
 
 function showOverlay(html, onTap) {
@@ -362,7 +372,9 @@ async function touch(id, picked = false) {
   lastLifted = id;
   it.last = now; it.count = (it.count || 0) + 1;
   try { await db.collection('items').doc(id).update({ last: now, count: it.count }); } catch (e) { console.warn(e); }
-  if (it.list === 'spont') {
+  if (it.list === 'center') {
+    openCenter(pretty(it.name));
+  } else if (it.list === 'spont') {
     showOverlay(picked ? `<p class="big">${esc(pretty(it.name))}</p><p class="small">enjoy</p>` : `<p class="big">enjoy</p>`,
       () => { closeOverlay(); render(); });
   } else if (it.list === 'creative') {
@@ -503,12 +515,15 @@ function leaveCenter() {
   clearTimeout(centerEnd); c.classList.add('leaving');
   setTimeout(() => { $('#centerspace').innerHTML = ''; document.body.classList.remove('centering'); }, 3000);
 }
-$('#centerbtn').addEventListener('click', e => {
-  e.stopPropagation(); Music.start();
+function openCenter(name) {
+  Music.start();
   document.body.classList.add('centering');
-  $('#centerspace').innerHTML = `<div class="over center"><button class="leave" aria-label="Back">←</button><div class="orb" aria-hidden="true"></div><p class="small">center</p></div>`;
+  $('#centerspace').innerHTML = `<div class="over center"><button class="leave" aria-label="Back">←</button>
+    ${name ? `<p class="big activity">${esc(name)}</p>` : ''}<div class="orb" aria-hidden="true"></div>
+    <p class="small">center</p></div>`;
   $('#centerspace .leave').onclick = ev => { ev.stopPropagation(); leaveCenter(); };
-});
+}
+document.addEventListener('click', e => { if (e.target.closest('#centerbtn')) { e.stopPropagation(); openCenter(); } });
 
 /* ---------- local storage fallback (when opened outside claude.ai, e.g. GitHub Pages) ---------- */
 const LOCAL_KEY = 'bombadoos-db';
